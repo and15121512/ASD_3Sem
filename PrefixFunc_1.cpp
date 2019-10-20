@@ -25,7 +25,7 @@ void PrintAllStringOccurences(const std::vector<char>& pattern) {
 	std::vector<char> pattern_with_delimiter = pattern;
 	pattern_with_delimiter.push_back(str_delimiter);
 
-	std::vector<uint32_t> prefix_funcs(pattern_with_delimiter.size(), 0); // храним только для паттерна, который ищем
+	std::vector<uint32_t> prefix_funcs(pattern_with_delimiter.size(), 0);
 	uint32_t prev_prefix_func = UINT32_MAX;
 
 	uint32_t index = 0;
@@ -42,7 +42,7 @@ void PrintAllStringOccurences(const std::vector<char>& pattern) {
 	while (std::cin.get(curr_symbol) && curr_symbol != '\n') {
 		uint32_t curr_prefix_func = PrefixFunc(prefix_funcs, pattern_with_delimiter, prev_prefix_func, curr_symbol);
 		if (curr_prefix_func == pattern.size())
-			std::cout << index - 2 * pattern.size() << ' '; // печатаем индекс НАЧАЛА вхождения
+			std::cout << index - 2 * pattern.size() << ' ';
 		prev_prefix_func = curr_prefix_func;
 
 		++index;
