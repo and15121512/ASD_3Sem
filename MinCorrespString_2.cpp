@@ -9,8 +9,8 @@ constexpr uint32_t alphabet_size = 26;
 // This function considers case when we need to run through all prefixes to
 // check that there is no prefixes that will be continued by adding new symbol to our result line
 void FindMinStringCasePrefixFuncIsNull(const std::vector<uint32_t>& prefix_func
-														, std::vector<uint32_t>& result_arr
-														, uint32_t index) {
+					, std::vector<uint32_t>& result_arr
+					, uint32_t index) {
 	std::bitset<alphabet_size> does_character_continue_string;
 	int32_t current = prefix_func[index - 1];
 	for (; current > 0; current = prefix_func[current - 1])
