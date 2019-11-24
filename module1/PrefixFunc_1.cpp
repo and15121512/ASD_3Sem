@@ -1,12 +1,13 @@
 #include <iostream>
 #include <cstdint>
 #include <vector>
+#include <limits>
 
 
 
 uint32_t PrefixFunc(const std::vector<uint32_t>& prefix_funcs, const std::vector<char>& pattern,
 	uint32_t prev_prefix_func, char curr_symbol) {
-	if (prev_prefix_func == UINT32_MAX)
+	if (prev_prefix_func == std::numeric_limits<uint32_t>::max())
 		return 0;
 
 	uint32_t j = prev_prefix_func;
@@ -26,8 +27,8 @@ std::vector<uint32_t> AllStringOccurences(const std::vector<char>& pattern) {
 	pattern_with_delimiter.push_back(str_delimiter);
 
 	std::vector<uint32_t> occurences;
-	std::vector<uint32_t> prefix_funcs(pattern_with_delimiter.size(), 0); // храним только для паттерна, который ищем
-	uint32_t prev_prefix_func = UINT32_MAX;
+	std::vector<uint32_t> prefix_funcs(pattern_with_delimiter.size(), 0);
+	uint32_t prev_prefix_func = std::numeric_limits<uint32_t>::max();
 
 	uint32_t index = 0;
 	for (const char& symbol : pattern_with_delimiter) {
@@ -43,7 +44,7 @@ std::vector<uint32_t> AllStringOccurences(const std::vector<char>& pattern) {
 	while (std::cin.get(curr_symbol) && curr_symbol != '\n') {
 		uint32_t curr_prefix_func = PrefixFunc(prefix_funcs, pattern_with_delimiter, prev_prefix_func, curr_symbol);
 		if (curr_prefix_func == pattern.size())
-			occurences.push_back(index - 2 * pattern.size()); // возвращаем индекс НАЧАЛА вхождения
+			occurences.push_back(index - 2 * pattern.size());
 		prev_prefix_func = curr_prefix_func;
 
 		++index;
