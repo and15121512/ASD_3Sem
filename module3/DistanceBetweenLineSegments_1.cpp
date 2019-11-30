@@ -103,53 +103,54 @@ struct LineSegment {
 	Vector<T> p_right;
 };
 
-template <class T>
-T PointAndSegmentDistance(const Vector<T>& point, const LineSegment<T>& seg) {
+template <class T, class ObjectT>
+class UnimodFunc;
+
+template <class T, class ObjectT>
+T TernarySearch(const LineSegment<T>& seg // where we search min value
+	, UnimodFunc<T, ObjectT> unimod_func); // line_segment or point
+
+template <class T, class ObjectT>
+class UnimodFunc {
+public:
+	UnimodFunc(const ObjectT& object) : object(object) { }
+	T GetValue(const Vector<T>& point) const {
+		return Distance(point, object);
+	}
+private:
+	ObjectT object;
+	T Distance(const Vector<T>& point, const LineSegment<T>& seg) const {
+		return TernarySearch(seg, UnimodFunc<T, Vector<T>>(point));
+	}
+	T Distance(const Vector<T>& point, const Vector<T>& other_point) const {
+		return PointsDistance(point, other_point);
+	}
+};
+
+template <class T, class ObjectT>
+T TernarySearch(const LineSegment<T>& seg // where we search min value
+				, UnimodFunc<T, ObjectT> unimod_func) { // line_segment or point
 	Vector<T> left_end = seg.p_left;
 	Vector<T> right_end = seg.p_right;
-	Vector<T> segm_p_left(0, 0, 0);
+	Vector<T> segm_p_left(0, 0, 0); // new endings of current searching line segment
 	Vector<T> segm_p_right(0, 0, 0);
 
+	// checking line_segment`s length to stop if 
+	// required accuracy is reached
 	while (IsDoubleGreater(PointsDistance(left_end, right_end), min_subsegment_length)) {
+		// new endings
 		segm_p_left = left_end + (right_end - left_end) * (1. / 3);
 		segm_p_right = left_end + (right_end - left_end) * (2. / 3);
 
-		if (!IsDoubleGreater(PointsDistance(point, segm_p_left)
-			, PointsDistance(point, segm_p_right)))
+		if (!IsDoubleGreater(unimod_func.GetValue(segm_p_left)
+			, unimod_func.GetValue(segm_p_right)))
 			right_end = segm_p_right;
-		if (!IsDoubleLess(PointsDistance(point, segm_p_left)
-			, PointsDistance(point, segm_p_right))) {
+		if (!IsDoubleLess(unimod_func.GetValue(segm_p_left)
+			, unimod_func.GetValue(segm_p_right))) {
 			left_end = segm_p_left;
 		}
 	}
-
-	return PointsDistance(left_end, point);
-}
-
-template <class T>
-T LineSegmentsDistance(const LineSegment<T>& seg_first, const LineSegment<T>& seg_second) {
-	// find distance between each point of the first segment and second segment
-	// and than return min value
-	Vector<T> left_end = seg_first.p_left;
-	Vector<T> right_end = seg_first.p_right;
-	Vector<T> segm_p_left(0, 0, 0);
-	Vector<T> segm_p_right(0, 0, 0);
-
-	while (PointsDistance(left_end, right_end) > min_subsegment_length) {
-		segm_p_left = left_end + (right_end - left_end) * (1. / 3);
-		segm_p_right = left_end + (right_end - left_end) * (2. / 3);
-
-		if (!IsDoubleGreater(PointAndSegmentDistance(segm_p_left, seg_second)
-			, PointAndSegmentDistance(segm_p_right, seg_second))) {
-			right_end = segm_p_right;
-		}
-		if (!IsDoubleLess(PointAndSegmentDistance(segm_p_left, seg_second)
-			, PointAndSegmentDistance(segm_p_right, seg_second))) {
-			left_end = segm_p_left;
-		}
-	}
-
-	return PointAndSegmentDistance(left_end, seg_second);
+	return unimod_func.GetValue(left_end);
 }
 
 int main() {
@@ -169,6 +170,7 @@ int main() {
 	right = Vector<double>(x, y, z);
 	LineSegment<double> second(left, right);
 
-	std::cout << std::setprecision(20) << LineSegmentsDistance(first, second);
+	std::cout << std::setprecision(20) << TernarySearch(first, 
+											UnimodFunc<double, LineSegment<double>>(second));
 	return 0;
 }
