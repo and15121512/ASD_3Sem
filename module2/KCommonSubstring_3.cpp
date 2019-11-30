@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <algorithm>
+#include <limits>
 
 
 
@@ -36,30 +37,30 @@ void SuffixArray::Prepearing() {
 
 	std::vector<uint64_t> counts(std::max(k_alphabet_size, sz)); // count symbols number in string
 	for (const auto& ch : str)
-		++counts.at(ch);
+		++counts[ch];
 
 	// count position of beginnings of same value blocks
 	uint64_t carry = 0;
 	for (uint64_t i = 0; i < counts.size() - 1; ++i) {
-		uint64_t tmp = counts.at(i);
-		counts.at(i) = carry;
+		uint64_t tmp = counts[i];
+		counts[i] = carry;
 		carry += tmp;
 	}
 
 	uint64_t suff_beginning = 0;
 	for (const auto& ch : str) {
-		suffixes.at(counts.at(ch)) = suff_beginning;
-		++counts.at(ch);
+		suffixes[counts[ch]] = suff_beginning;
+		++counts[ch];
 		++suff_beginning;
 	}
 
 	uint64_t curr_eq_class = 0;
-	eq_classes.at(0) = 0;
+	eq_classes[0] = 0;
 	for (uint64_t i = 1; i < suffixes.size(); ++i) {
-		if (str.at(suffixes.at(i)) != str.at(suffixes.at(i - 1)))
+		if (str[suffixes[i]] != str[suffixes[i - 1]])
 			++curr_eq_class;
 
-		eq_classes.at(suffixes.at(i)) = curr_eq_class;
+		eq_classes[suffixes[i]] = curr_eq_class;
 	}
 }
 
@@ -75,45 +76,44 @@ SuffixArray::SuffixArray(const std::string& str) : str(str) {
 		std::vector<uint64_t> sorted_by_second_part(suffixes.size());
 
 		for (uint64_t i = 0; i < sorted_by_second_part.size(); ++i)
-			sorted_by_second_part.at(i) = CycledValue(suffixes.at(i) - curr_len);
+			sorted_by_second_part[i] = CycledValue(suffixes[i] - curr_len);
 
 		// next we can sort it using counting sort
 		std::vector<uint64_t> counts(suffixes.size());
 
 		for (const auto& suff : sorted_by_second_part)
-			++counts.at(eq_classes.at(suff));
+			++counts[eq_classes[suff]];
 
 		uint64_t carry = 0;
 		for (uint64_t i = 0; i < counts.size(); ++i) {
-			uint64_t tmp = counts.at(i);
-			counts.at(i) = carry;
+			uint64_t tmp = counts[i];
+			counts[i] = carry;
 			carry += tmp;
 		}
 
 		//uint32_t pref_beginning = 0;
 		for (const auto& suff : sorted_by_second_part) {
-			suffixes.at(counts.at(eq_classes.at(suff))) = suff;
-			++counts.at(eq_classes.at(suff));
-			//++pref_beginning;
+			suffixes[counts[eq_classes[suff]]] = suff;
+			++counts[eq_classes[suff]];
 		}
 
 		// change classes
 		std::vector<uint64_t> new_eq_classes(eq_classes.size());
 		uint64_t curr_eq_class = 0;
-		new_eq_classes.at(0) = 0;
+		new_eq_classes[0] = 0;
 		for (uint64_t i = 1; i < suffixes.size(); ++i) {
 			bool is_first_part_classes_equal =
-				eq_classes.at(suffixes.at(i)) == eq_classes.at(suffixes.at(i - 1));
+				eq_classes[suffixes[i]] == eq_classes[suffixes[i - 1]];
 			bool is_second_part_classes_equal =
-				eq_classes.at(CycledValue(suffixes.at(i) + curr_len))
-				== eq_classes.at(CycledValue(suffixes.at(i - 1) + curr_len));
+				eq_classes[CycledValue(suffixes[i] + curr_len)]
+				== eq_classes[CycledValue(suffixes[i - 1] + curr_len)];
 
 			if (!(is_first_part_classes_equal
 				&& is_second_part_classes_equal)) {
 				++curr_eq_class;
 			}
 
-			new_eq_classes.at(suffixes.at(i)) = curr_eq_class;
+			new_eq_classes[suffixes[i]] = curr_eq_class;
 		}
 
 		eq_classes = std::move(new_eq_classes);
@@ -127,35 +127,35 @@ std::vector<uint64_t> SuffixArray::lcp() {
 	std::vector<uint64_t> suff_positions(suffixes.size());
 
 	for (uint64_t i = 0; i < suff_positions.size(); ++i) {
-		suff_positions.at(suffixes.at(i)) = i;
+		suff_positions[suffixes[i]] = i;
 	}
 
 	// calculating lcp
 	std::vector<uint64_t> lcp(suffixes.size());
-	lcp.at(0) = 0; // first value undefined
+	lcp[0] = 0; // first value undefined
 	uint64_t prev_lcp = 0;
 
 	for (uint64_t i = 0; i < suff_positions.size(); ++i) {
 		// lcp for zero element in suffix array is undefined...
 		// ...so, we just skip it
-		if (suff_positions.at(i) == 0)
+		if (suff_positions[i] == 0)
 			continue;
 
 		// lcp for current = lcp for previous suffix in string - 1
 		// we have matching theorem
 		uint64_t curr_lcp = 0;
-		if (i > 0 && suff_positions.at(i - 1) != 0 && prev_lcp > 0) // if previous lcp exists (not lcp[0])
+		if (i > 0 && suff_positions[i - 1] != 0 && prev_lcp > 0) // if previous lcp exists (not lcp[0])
 			curr_lcp = prev_lcp - 1;
 
 		// find lcp
-		uint64_t j = suffixes.at(suff_positions.at(i) - 1); // previous suffix in suffix array
+		uint64_t j = suffixes[suff_positions[i] - 1]; // previous suffix in suffix array
 
 		for (; i + curr_lcp < str.size()
 			&& j + curr_lcp < str.size()
-			&& str.at(i + curr_lcp) == str.at(j + curr_lcp); ++curr_lcp);
-		lcp.at(suff_positions.at(i)) = curr_lcp;
+			&& str[i + curr_lcp] == str[j + curr_lcp]; ++curr_lcp);
+		lcp[suff_positions[i]] = curr_lcp;
 
-		prev_lcp = lcp.at(suff_positions.at(i));
+		prev_lcp = lcp[suff_positions[i]];
 	}
 
 	return lcp;
@@ -175,15 +175,15 @@ std::pair<uint64_t, uint64_t> SuffixArray::KNumberedCommonString(const std::stri
 												// we need to find now
 
 	std::vector<uint64_t> lcp_arr = lcp();
-	uint64_t k_substr_start = UINT64_MAX;
-	uint64_t k_substr_length = UINT64_MAX;
+	uint64_t k_substr_start = std::numeric_limits<uint64_t>::max();
+	uint64_t k_substr_length = std::numeric_limits<uint64_t>::max();
 	for (uint64_t i = 1; i < suffixes.size(); ++i) {
 		// if our suffixes starts in one string
 		// we can`t find new common substring here
 		// also check if largest common substring in suffix < common_part
 		// because in this case we are to do noting
-		int64_t value = (suffixes.at(i - 1) - delimiter_position)
-			* (delimiter_position - suffixes.at(i));
+		int64_t value = (suffixes[i - 1] - delimiter_position)
+			* (delimiter_position - suffixes[i]);
 		if (!(value > 0)
 			|| lcp_arr[i] < common_part) {
 			// just change "frame" value
@@ -229,7 +229,7 @@ int main() {
 	std::pair<int64_t, int64_t> substr_beginning = suf_arr.KNumberedCommonString(first_str, k, delimiter_position);
 
 	std::string result;
-	if (substr_beginning.first != UINT64_MAX) { // if k-numbered string exists
+	if (substr_beginning.first != std::numeric_limits<uint64_t>::max()) { // if k-numbered string exists
 		result = first_str.substr(substr_beginning.first
 			, substr_beginning.second);
 	}
